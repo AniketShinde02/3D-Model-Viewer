@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D MODEL OF FUSION 360</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2196f3;
+            --secondary-color: #1976d2;
+            --background-dark: #1a237e;
+            --background-light: #0d47a1;
+            --text-color: #ffffff;
+            --card-bg: rgba(0, 0, 0, 0.7);
+            --button-hover: #1565c0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body { 
+            font-family: 'Roboto', sans-serif;
+            text-align: center; 
+            background: linear-gradient(135deg, var(--background-dark), var(--background-light));
+            min-height: 100vh;
+            color: var(--text-color);
+            overflow-x: hidden;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center;
+            width: 100%;
+            max-width: 1400px;
+            padding: clamp(15px, 3vw, 30px);
+            background: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            margin: 20px auto;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            width: 100%;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: clamp(24px, 4vw, 36px);
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: clamp(14px, 2vw, 18px);
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 20px;
+        }
+
+        #viewer {
+            width: 100%;
+            height: 75vh;
+            max-height: 800px;
+            position: relative;
+            border-radius: 15px;
+            background: rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+            cursor: grab;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        #viewer:active {
+            cursor: grabbing;
+        }
+
+        canvas { 
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: clamp(10px, 2vw, 20px);
+            margin-top: 25px;
+            width: 100%;
+            padding: 0 20px;
+        }
+
+        .buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: clamp(10px, 2vw, 20px);
+        }
+
+        .buttons button {
+            padding: clamp(10px, 2vw, 15px) clamp(20px, 3vw, 30px);
+            border: none;
+            background: var(--primary-color);
+            color: white;
+            font-weight: 500;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: clamp(140px, 20vw, 160px);
+            font-size: clamp(14px, 2vw, 16px);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .buttons button:hover {
+            background: var(--button-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+        }
+
+        .model-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: clamp(20px, 3vw, 30px);
+            border-radius: 12px;
+            margin-top: 25px;
+            width: 100%;
+            max-width: 1000px;
+            font-size: clamp(14px, 2vw, 16px);
+            backdrop-filter: blur(5px);
+        }
+
+        .model-info p {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .loader {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            display: none;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .view-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .view-controls button {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .view-controls button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            #viewer {
+                height: 60vh;
+            }
+            .container {
+                padding: 15px;
+            }
+            .buttons button {
+                min-width: 120px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #viewer {
+                height: 50vh;
+            }
+            .buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            .buttons button {
+                width: 100%;
+                max-width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>3D MODEL OF FUSION 360</h1>
+            <div class="subtitle">Interactive 3D Model Viewer</div>
+        </div>
+        <div id="viewer">
+            <div class="view-controls">
+                <button onclick="resetView()" title="Reset View">↺</button>
+                <button onclick="toggleFullscreen()" title="Fullscreen">⛶</button>
+            </div>
+        </div>
+        <div class="loader" id="loader"></div>
+        <div class="controls">
+            <div class="buttons">
+                <button onclick="changeView('front')">Front View</button>
+                <button onclick="changeView('top')">Top View</button>
+                <button onclick="changeView('side')">Side View</button>
+                <button onclick="changeView('iso')">Isometric</button>
+            </div>
+        </div>
+        <div class="model-info">
+            <p>Use mouse/touch to freely rotate the model in any direction</p>
+            <p>Scroll or pinch to zoom in/out</p>
+            <p>Right-click and drag to pan the view</p>
+            <p>Click the reset button to return to default view</p>
+        </div>
+    </div>
+    <script>
+        let scene, camera, renderer, controls, model;
+        let isFullscreen = false;
+        let isAnimating = false;
+        let lastTime = 0;
+        const FPS = 60;
+        const frameInterval = 1000 / FPS;
+
+        function init() {
+            // Create scene with optimized settings
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000000);
+
+            // Optimize camera settings
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 30, 120);
+            camera.lookAt(0, 0, 0);
+
+            // Optimize renderer settings
+            renderer = new THREE.WebGLRenderer({ 
+                antialias: false,
+                powerPreference: "high-performance",
+                precision: "lowp"
+            });
+            renderer.setSize(window.innerWidth * 0.95, window.innerHeight * 0.7);
+            renderer.setPixelRatio(1);
+            renderer.shadowMap.enabled = false;
+            renderer.toneMapping = THREE.NoToneMapping;
+            document.getElementById("viewer").appendChild(renderer.domElement);
+
+            // Simplified lighting setup
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            directionalLight.position.set(5, 5, 5);
+            scene.add(directionalLight);
+
+            // Optimize controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.1;
+            controls.screenSpacePanning = true;
+            controls.minDistance = 100;
+            controls.maxDistance = 500;
+            controls.maxPolarAngle = Math.PI;
+            controls.enableZoom = true;
+            controls.enableRotate = true;
+            controls.enablePan = true;
+            controls.target.set(0, 0, 0);
+            controls.update();
+
+            // Load model with optimized settings
+            const loader = new THREE.OBJLoader();
+            document.getElementById("loader").style.display = "block";
+
+            loader.load('frogface.obj', function(object) {
+                model = object;
+                
+                // Optimize model materials
+                model.traverse((child) => {
+                    if (child instanceof THREE.Mesh) {
+                        child.material = new THREE.MeshPhongMaterial({
+                            color: 0x808080,
+                            shininess: 30,
+                            flatShading: true
+                        });
+                        child.castShadow = false;
+                        child.receiveShadow = false;
+                    }
+                });
+
+                // Optimize model geometry
+                model.traverse((child) => {
+                    if (child instanceof THREE.Mesh) {
+                        child.geometry.computeVertexNormals();
+                        child.geometry.computeBoundingSphere();
+                        child.geometry.dispose();
+                    }
+                });
+
+                model.scale.set(0.05, 0.05, 0.05);
+                model.position.set(0, 0, 0);
+                model.rotation.set(0, Math.PI, 0);
+                scene.add(model);
+                document.getElementById("loader").style.display = "none";
+            });
+
+            // Set initial camera position for better visibility
+            camera.position.set(0, 50, 200);
+            camera.lookAt(0, 0, 0);
+            animate();
+        }
+
+        function animate(currentTime) {
+            if (!lastTime) lastTime = currentTime;
+            const deltaTime = currentTime - lastTime;
+
+            if (deltaTime >= frameInterval) {
+                controls.update();
+                renderer.render(scene, camera);
+                lastTime = currentTime;
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        function resetView() {
+            camera.position.set(0, 50, 200);
+            camera.lookAt(0, 0, 0);
+            if (model) {
+                model.rotation.set(0, Math.PI, 0);
+            }
+        }
+
+        function changeView(view) {
+            if (!model) return;
+            switch(view) {
+                case 'front':
+                    camera.position.set(0, 50, 200);
+                    model.rotation.set(0, Math.PI, 0);
+                    break;
+                case 'top':
+                    camera.position.set(0, 200, 0);
+                    model.rotation.set(0, Math.PI, 0);
+                    break;
+                case 'side':
+                    camera.position.set(200, 50, 0);
+                    model.rotation.set(0, Math.PI, 0);
+                    break;
+                case 'iso':
+                    camera.position.set(150, 150, 150);
+                    model.rotation.set(0, Math.PI, 0);
+                    break;
+            }
+            camera.lookAt(0, 0, 0);
+        }
+
+        function toggleFullscreen() {
+            const viewer = document.getElementById('viewer');
+            if (!isFullscreen) {
+                if (viewer.requestFullscreen) {
+                    viewer.requestFullscreen();
+                } else if (viewer.webkitRequestFullscreen) {
+                    viewer.webkitRequestFullscreen();
+                } else if (viewer.msRequestFullscreen) {
+                    viewer.msRequestFullscreen();
+                }
+                isFullscreen = true;
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+                isFullscreen = false;
+            }
+        }
+
+        // Optimize window resize handler
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(onWindowResize, 500);
+        }, false);
+
+        function onWindowResize() {
+            const container = document.getElementById('viewer');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            
+            renderer.setSize(width, height);
+        }
+
+        // Add performance monitoring
+        let frameCount = 0;
+        let lastFPSUpdate = 0;
+        const FPS_UPDATE_INTERVAL = 1000;
+
+        function updateFPS(currentTime) {
+            frameCount++;
+            if (currentTime - lastFPSUpdate > FPS_UPDATE_INTERVAL) {
+                const fps = Math.round((frameCount * 1000) / (currentTime - lastFPSUpdate));
+                console.log('FPS:', fps);
+                frameCount = 0;
+                lastFPSUpdate = currentTime;
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
